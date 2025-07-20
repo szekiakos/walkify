@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scavenger Hunt</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 100%;
+            padding: 20px;
+            margin: 0 auto;
+        }
+        .hunt-card, .task-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .hunt-card {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .hunt-card:hover {
+            transform: translateY(-3px);
+        }
+        .hunt-card h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .hunt-card p {
+            color: #7f8c8d;
+            margin-bottom: 0;
+        }
+        .task-image {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #3498db;
+            margin-top: 0;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        button.secondary {
+            background-color: #95a5a6;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button.secondary:hover {
+            background-color: #7f8c8d;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .progress {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #7f8c8d;
+        }
+        .completion-screen {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .completion-screen h2 {
+            color: #27ae60;
+            font-size: 24px;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Selection Screen -->
+        <div id="selection-screen">
+            <h1>Choose a Scavenger Hunt</h1>
+            <div id="hunt-list"></div>
+        </div>
+        
+        <!-- Task Screen -->
+        <div id="task-screen" class="hidden">
+            <h1 id="hunt-title">Scavenger Hunt</h1>
+            <div class="progress" id="progress">Task 1 of 3</div>
+            
+            <div id="task-container" class="task-container">
+                <h2 id="task-title">Task Title</h2>
+                <div id="task-image-container"></div>
+                <p id="task-description">Task description goes here.</p>
+                <input type="text" id="answer-input" placeholder="Enter your answer...">
+                <button id="submit-btn">Submit Answer</button>
+                <div id="error-message" class="error hidden"></div>
+            </div>
+        </div>
+        
+        <!-- Completion Screen -->
+        <div id="completion-screen" class="completion-screen hidden">
+            <h2>Congratulations!</h2>
+            <p>You've completed the <span id="completed-hunt-name"></span>!</p>
+            <button id="new-hunt-btn">Choose Another Hunt</button>
+        </div>
+    </div>
+
+    <script>
+        // Scavenger Hunt Data
+        const scavengerHunts = {
+            "math": {
+                "title": "Math Challenge",
+                "tasks": [
+                    {
+                        "title": "Simple Addition",
+                        "description": "What is 5 + 7?",
+                        "image": "",
+                        "answers": ["12", "twelve"]
+                    },
+                    {
+                        "title": "Multiplication",
+                        "description": "What is 6 × 9?",
+                        "image": "",
+                        "answers": ["54", "fifty-four"]
+                    },
+                    {
+                        "title": "Subtraction",
+                        "description": "What is 20 - 8?",
+                        "image": "",
+                        "answers": ["12", "twelve"]
+                    }
+                ]
+            },
+            "colors": {
+                "title": "Color Quiz",
+                "tasks": [
+                    {
+                        "title": "Primary Color",
+                        "description": "Name a primary color",
+                        "image": "",
+                        "answers": ["red", "blue", "yellow"]
+                    },
+                    {
+                        "title": "Rainbow",
+                        "description": "What color comes after green in a rainbow?",
+                        "image": "",
+                        "answers": ["blue"]
+                    },
+                    {
+                        "title": "Mix Colors",
+                        "description": "What color do you get when you mix red and white?",
+                        "image": "",
+                        "answers": ["pink"]
+                    }
+                ]
+            },
+            "animals": {
+                "title": "Animal Kingdom",
+                "tasks": [
+                    {
+                        "title": "Fastest Animal",
+                        "description": "What's the fastest land animal?",
+                        "image": "",
+                        "answers": ["cheetah"]
+                    },
+                    {
+                        "title": "Tallest Animal",
+                        "description": "What's the tallest animal in the world?",
+                        "image": "",
+                        "answers": ["giraffe"]
+                    },
+                    {
+                        "title": "Ocean Giant",
+                        "description": "What's the largest animal in the ocean?",
+                        "image": "",
+                        "answers": ["blue whale"]
+                    }
+                ]
+            },
+            "geography": {
+                "title": "World Geography",
+                "tasks": [
+                    {
+                        "title": "Largest Continent",
+                        "description": "What is the largest continent?",
+                        "image": "",
+                        "answers": ["asia"]
+                    },
+                    {
+                        "title": "Longest River",
+                        "description": "What is the longest river in the world?",
+                        "image": "",
+                        "answers": ["nile"]
+                    },
+                    {
+                        "title": "Highest Mountain",
+                        "description": "What is the highest mountain above sea level?",
+                        "image": "",
+                        "answers": ["mount everest", "everest"]
+                    }
+                ]
+            },
+            "food": {
+                "title": "Food Trivia",
+                "tasks": [
+                    {
+                        "title": "Italian Dish",
+                        "description": "What Italian dish has 'pepperoni' as a common topping?",
+                        "image": "",
+                        "answers": ["pizza"]
+                    },
+                    {
+                        "title": "Sweet Treat",
+                        "description": "What dessert is made from whipped cream and fruit?",
+                        "image": "",
+                        "answers": ["fruit salad", "trifle"]
+                    },
+                    {
+                        "title": "Breakfast Food",
+                        "description": "What food comes from a chicken and is commonly eaten for breakfast?",
+                        "image": "",
+                        "answers": ["egg", "eggs"]
+                    }
+                ]
+            }
+        };
+
+        // App state
+        let currentHunt = null;
+        let currentTaskIndex = 0;
+        let totalTasks = 0;
+
+        // DOM elements
+        const selectionScreen = document.getElementById('selection-screen');
+        const taskScreen = document.getElementById('task-screen');
+        const completionScreen = document.getElementById('completion-screen');
+        const huntList = document.getElementById('hunt-list');
+        const huntTitle = document.getElementById('hunt-title');
+        const taskContainer = document.getElementById('task-container');
+        const taskTitle = document.getElementById('task-title');
+        const taskDescription = document.getElementById('task-description');
+        const taskImageContainer = document.getElementById('task-image-container');
+        const answerInput = document.getElementById('answer-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const errorMessage = document.getElementById('error-message');
+        const progressText = document.getElementById('progress');
+        const completedHuntName = document.getElementById('completed-hunt-name');
+        const newHuntBtn = document.getElementById('new-hunt-btn');
+
+        // Initialize the app
+        function init() {
+            renderHuntSelection();
+            
+            submitBtn.addEventListener('click', checkAnswer);
+            answerInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkAnswer();
+                }
+            });
+            
+            newHuntBtn.addEventListener('click', returnToSelection);
+        }
+
+        // Render the hunt selection screen
+        function renderHuntSelection() {
+            huntList.innerHTML = '';
+            
+            for (const [key, hunt] of Object.entries(scavengerHunts)) {
+                const card = document.createElement('div');
+                card.className = 'hunt-card';
+                card.innerHTML = `
+                    <h3>${hunt.title}</h3>
+                    <p>${hunt.tasks.length} tasks</p>
+                `;
+                card.addEventListener('click', () => startHunt(key));
+                huntList.appendChild(card);
+            }
+        }
+
+        // Start a specific hunt
+        function startHunt(huntKey) {
+            currentHunt = scavengerHunts[huntKey];
+            currentTaskIndex = 0;
+            totalTasks = currentHunt.tasks.length;
+            
+            huntTitle.textContent = currentHunt.title;
+            selectionScreen.classList.add('hidden');
+            taskScreen.classList.remove('hidden');
+            completionScreen.classList.add('hidden');
+            
+            loadTask(currentTaskIndex);
+        }
+
+        // Load a task by index
+        function loadTask(index) {
+            if (index >= totalTasks) {
+                // All tasks completed
+                taskScreen.classList.add('hidden');
+                completionScreen.classList.remove('hidden');
+                completedHuntName.textContent = currentHunt.title;
+                return;
+            }
+            
+            const task = currentHunt.tasks[index];
+            taskTitle.textContent = task.title;
+            taskDescription.textContent = task.description;
+            
+            // Update image if exists
+            taskImageContainer.innerHTML = '';
+            if (task.image) {
+                const img = document.createElement('img');
+                img.src = task.image;
+                img.alt = task.title;
+                img.className = 'task-image';
+                taskImageContainer.appendChild(img);
+            }
+            
+            // Clear input and error
+            answerInput.value = '';
+            errorMessage.classList.add('hidden');
+            
+            // Update progress
+            progressText.textContent = `Task ${index + 1} of ${totalTasks}`;
+        }
+
+        // Check if the answer is correct
+        function checkAnswer() {
+            const userAnswer = answerInput.value.trim().toLowerCase();
+            const currentTask = currentHunt.tasks[currentTaskIndex];
+            
+            if (currentTask.answers.some(answer => answer.toLowerCase() === userAnswer)) {
+                // Correct answer
+                currentTaskIndex++;
+                loadTask(currentTaskIndex);
+            } else {
+                // Incorrect answer
+                errorMessage.textContent = "That's not correct. Try again!";
+                errorMessage.classList.remove('hidden');
+            }
+        }
+
+        // Return to hunt selection
+        function returnToSelection() {
+            selectionScreen.classList.remove('hidden');
+            taskScreen.classList.add('hidden');
+            completionScreen.classList.add('hidden');
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>
